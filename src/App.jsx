@@ -1,15 +1,26 @@
-// import logo from './logo.svg';
+import { useState } from 'react';
 import Header from './Header';
-import RegisterUser from './Components/RegisterUser'
+import RegisterUser from './Components/RegisterUser';
+import HomeComponent from './Pages/Home/index';
 import Footer from './Footer';
-import './App.css';
+// import RegisterUser from './Components/RegisterUser'
+import { Container } from './Global.styles';
 
-const App = ()=>{
+const App = () => {
+  const [formData, setFormData] = useState(null);
+
+  const handleSave = (data) => {
+    setFormData(data);
+  };
+
   return (
     <div className="App">
-     <Header />
-     <RegisterUser />
-     <Footer />
+      <Header />
+      <Container >
+        <RegisterUser onSave={handleSave} />
+        <HomeComponent data={formData} />
+      </Container>
+      <Footer />
     </div>
   )
 }

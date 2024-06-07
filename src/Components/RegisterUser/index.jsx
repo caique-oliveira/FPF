@@ -1,99 +1,22 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from 'react';
-import './styles.css';
+import * as S from './RegisterUser.styles';
 
 const CONFIG = {
   localStoreName: 'commentor-uzor'
 };
 
-const RegisterUser = () => {
+const RegisterUser = ({ onSave, onCommentAdded }) => {
+  const [formData, setFormData] = useState({
+    foto: '',
+    nome: '',
+    endereco: '',
+    email: '',
+    telefone: '',
+    dataNascimento: '',
+    genero: '',
+  });
 
-  const [comments, setComments] = useState([]);
-
-  useEffect(() => {
-    getComments();
-  }, []);
-
-  const getComments = () => {
-    let storedComments = JSON.parse(window.localStorage.getItem(CONFIG.localStoreName));
-    console.log(storedComments, 'storedComments aqui')
-
-    if (!(storedComments instanceof Array)) {
-      storedComments = [{ text: "Cadastrar novo usuário" }];
-      window.localStorage.setItem(CONFIG.localStoreName, JSON.stringify(storedComments));
-    }
-
-    setComments(storedComments);
-  };
-
-  const addToComments = (data) => {
-    setComments(prevComments => [...prevComments, data]);
-    // Uncomment the below code if you want to update localStorage after adding a comment
-    setTimeout(() => {
-      window.localStorage.setItem(CONFIG.localStoreName, JSON.stringify([...comments, data]));
-    }, 100);
-  };
-
-  return (
-    <div id="comments-list">
-      {comments.map((comment, index) => (
-        <CommentViewComponent key={index} comment={comment} />
-      ))}
-      <CommentAddComponent onCommentAdded={addToComments} />
-    </div>
-  );
-};
-
-const CommentViewComponent = ({ comment }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [shouldHide, setShouldHide] = useState(false);
-  const [commentState, setCommentState] = useState(comment);
-
-  const toggleEditComment = () => {
-    setIsEditing(!isEditing);
-  };
-
-  const deleteComment = () => {
-    setShouldHide(true);
-  };
-
-  const updateComment = (e) => {
-    const textElement = e.target.closest('.commentWrapper').getElementsByTagName('textarea')[0];
-    const updatedComment = { ...commentState, text: textElement.value };
-    setCommentState(updatedComment);
-    setIsEditing(false);
-  };
-
-  if (shouldHide) {
-    return null;
-  }
-
-  return (
-    <div className="commentWrapper">
-      <div className="commentText">
-        <span>{commentState.image}</span>
-        <p>{commentState.name}</p>
-        <p>{commentState.email}</p>
-        <p>{commentState.telefone}</p>
-        <p>{commentState.endereco}</p>
-        <p>{commentState.date}</p>
-        {!isEditing ? <p>{commentState.text}</p> : <textarea defaultValue={commentState.text}></textarea>}
-      </div>
-      {!isEditing ? (
-        <div className="commentBtns">
-          <button onClick={deleteComment} className="btnDanger">Deletar</button>
-        </div>
-      ) : (
-        <div className="commentBtns">
-          <button onClick={toggleEditComment} className="btnDefault">Cancel</button>
-          <button onClick={updateComment} className="btnSuccess">Update</button>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const CommentAddComponent = ({ onCommentAdded }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [name, setName] = useState('');
 
@@ -115,8 +38,29 @@ const CommentAddComponent = ({ onCommentAdded }) => {
 
   const modalClasses = 'commentAddModal ' + (modalOpen ? 'opened ' : 'closed ');
 
-  const handleChange = (event) => {
-    setName(event.target.value);
+  // const handleChange = (event) => {
+  //   setName(event.target.value);
+  // };
+
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
+    if (name === 'foto') {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, foto: reader.result });
+      };
+      if (files[0]) {
+        reader.readAsDataURL(files[0]);
+      }
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    onSave(formData);
   };
 
   return (
@@ -128,38 +72,21 @@ const CommentAddComponent = ({ onCommentAdded }) => {
 
         <div className={modalClasses}>
           <h2>Cadastrar Novo usuário</h2>
-          <form onSubmit={addComment}>
-            <label className='picture' tabIndex='0'>
-              <input type="file" className="input-file" accept="image/*" name='image' />
-            </label>
-            <label>
-              <span>Nome Completo</span>
-              <input id='InputFormId' className='InputForm' type="text" name="input"
-                onChange={handleChange}
-                required
-              />
-            </label>
-            <br />
-
-            <label>
-              <span>Email</span>
-              <input className='InputForm' type="text" name="email" required />
-            </label>
-            <label>
-              <span>Telefone</span>
-              <input className='InputForm' type="text" name="telefone" required />
-            </label>
-            <label>
-              <span>Endereço</span>
-              <input className='InputForm' type="text" name="endereco" required />
-            </label>
-            <label>
-              <span>Data de nascimento</span>
-              <input className='InputForm' type="date" name="date" required />
-            </label>
-            <button type="button" className="btnDefault" onClick={toggleModal}>Cancelar</button>
-            <button type="submit" className="btnSuccess">Cadastrar</button>
-          </form>
+          <S.Form onSubmit={handleSubmit}>
+            <S.Input type="file" name="foto" accept="image/*" onChange={handleChange} />
+            <S.Input type="text" name="nome" placeholder="Nome" onChange={handleChange} />
+            <S.Input type="text" name="endereco" placeholder="Endereço" onChange={handleChange} />
+            <S.Input type="email" name="email" placeholder="E-mail" onChange={handleChange} />
+            <S.Input type="tel" name="telefone" placeholder="Telefone" onChange={handleChange} />
+            <S.Input type="date" name="dataNascimento" onChange={handleChange} />
+            <select name="genero" onChange={handleChange}>
+              <option value="">Selecione o Gênero</option>
+              <option value="Masculino">Masculino</option>
+              <option value="Feminino">Feminino</option>
+              <option value="Outro">Outro</option>
+            </select>
+            <S.Button type="submit">Salvar</S.Button>
+          </S.Form>
         </div>
       </div>
     </>
